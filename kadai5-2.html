@@ -4,9 +4,9 @@
     <title>演習課題5-2：外部APIの呼び出しテスト</title>
 </head>
 <body>
-    <h1 id="msg">何かのAPI</h1>
+    <h1 id="msg">ポケモンのAPI</h1>
     <form name="apiform"><p>
-        何かのフォーム：<input type="text" name="form_data">
+        pokemonname：<input type="text" name="form_data" placeholder="例:"ditto>
         <button type="button" id="btn1" onclick="some_api(this.form)">実行</button>
     </p></form>
     
@@ -14,8 +14,47 @@
     <script>
         async function some_api(myForm) {
             // ここにコードを書く
-            document.getElementById("result").innerHTML += myForm.form_data.value+"<br />";
-            document.apiform.reset();
+            const name = myForm.form_data.value.trim().toLowerCase();
+            if(!name){
+                document.getElementById("result").innerHTML = "ポケモン名を入力してください。";
+                return;
+            }
+            const url = `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(name)}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error("ポケモンが見つかりませんでした。");
+                }
+                const data = await response.json();
+
+                // 種族名の日本語取得
+                const speciesResponse = await fetch(data.species.url);
+                const speciesData = await speciesResponse.json();
+                const jpNameEntry = speciesData.names.find(n => n.language.name === "ja");
+                const jpName = jpNameEntry ? jpNameEntry.name : data.name;
+
+                // タイプの日本語名
+                const jpTypes = [];
+                for (const typeInfo of data.types) {
+                    const typeResponse = await fetch(typeInfo.type.url);
+                    const typeData = await typeResponse.json();
+                    const jpTypeName = typeData.names.find(n => n.language.name === "ja");
+                    jpTypes.push(jpTypeName ? jpTypeName.name : typeInfo.type.name);
+                }
+
+                const html = `
+                    <h2>${jpName}</h2>
+                    <img src="${data.sprites.front_default}" alt="${jpName}">
+                    <p>高さ：${data.height / 10} m</p>
+                    <p>重さ：${data.weight / 10} kg</p>
+                    <p>タイプ：${jpTypes.join("、")}</p>
+                `;
+                document.getElementById("result").innerHTML = html;
+            } catch (error) {
+                document.getElementById("result").innerHTML = "エラー：" + error.message;
+            }
+            myForm.reset();
         }
     </script>
 </body>
