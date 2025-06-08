@@ -28,13 +28,11 @@
                 }
                 const data = await response.json();
 
-                // 種族名の日本語取得
                 const speciesResponse = await fetch(data.species.url);
                 const speciesData = await speciesResponse.json();
                 const jpNameEntry = speciesData.names.find(n => n.language.name === "ja");
                 const jpName = jpNameEntry ? jpNameEntry.name : data.name;
 
-                // タイプの日本語名
                 const jpTypes = [];
                 for (const typeInfo of data.types) {
                     const typeResponse = await fetch(typeInfo.type.url);
